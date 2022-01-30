@@ -1,0 +1,1 @@
+{"car": 3, "wheels": [2], "steering": [4, 6], "shm_props": {"name": "pyBullet_camera_shm", "shape": [128, 128, 5], "dtype": "float64"}, "cam_props": {"width": 128, "height": 128, "fov": 60, "aspect": 1.0, "near": 0.02, "far": 1}}
