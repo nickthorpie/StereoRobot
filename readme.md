@@ -222,4 +222,4 @@ Project Link: [https://github.com/nickthorpie/StereoRobot](https://github.com/ni
 [license-url]: https://github.com/nickthorpie/StereoRobot/blob/master/LICENSE.txt
 [linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
 [linkedin-url]: https://linkedin.com/in/linkedin_username
-[product-screenshot]: resources/readme/pybulletscreencap.png/screenshot.png
+[product-screenshot]: resources/readme/pybulletscreencap.png
