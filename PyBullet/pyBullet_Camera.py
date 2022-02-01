@@ -5,7 +5,7 @@ import json as JSON
 from multiprocessing import shared_memory
 import numpy as np
 import matplotlib.pyplot as plt
-from mprt_monkeypatch import remove_shm_from_resource_tracker as patch
+from PyBullet.mprt_monkeypatch import remove_shm_from_resource_tracker as patch
 patch()
 
 class Camera:
@@ -13,7 +13,7 @@ class Camera:
         self.init()
     def init(self):
 
-        with open('./env_variables.json','r') as f:
+        with open('env_variables.json', 'r') as f:
             dic = JSON.loads(f.read())
 
         # car= dic['car']

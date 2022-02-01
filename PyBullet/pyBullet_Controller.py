@@ -1,7 +1,7 @@
 import json as JSON
 import numpy as np
 
-with open('./env_variables.json', 'r') as f:
+with open('env_variables.json', 'r') as f:
     dic = JSON.loads(f.read())
 
 shm_props = dic['shm_props']

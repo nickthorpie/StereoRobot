@@ -69,24 +69,9 @@ To minimize the time between robot assembly and software implementation, this pr
 in a simulated environment.
 
 
-Here's a blank template to get started: To avoid retyping too much info. Do a search and replace with your text editor for the following: `nickthorpie`, `StereoRobot`, `twitter_handle`, `linkedin_username`, `email`, `email_client`, `project_title`, `project_description`
-
 <p align="right">(<a href="#top">back to top</a>)</p>
 
 
-
-### Built With
-
-* [Next.js](https://nextjs.org/)
-* [React.js](https://reactjs.org/)
-* [Vue.js](https://vuejs.org/)
-* [Angular](https://angular.io/)
-* [Svelte](https://svelte.dev/)
-* [Laravel](https://laravel.com)
-* [Bootstrap](https://getbootstrap.com)
-* [JQuery](https://jquery.com)
-
-<p align="right">(<a href="#top">back to top</a>)</p>
 
 
 
@@ -222,4 +207,4 @@ Project Link: [https://github.com/nickthorpie/StereoRobot](https://github.com/ni
 [license-url]: https://github.com/nickthorpie/StereoRobot/blob/master/LICENSE.txt
 [linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
 [linkedin-url]: https://linkedin.com/in/linkedin_username
-[product-screenshot]: resources/readme/pybulletscreencap.png/screenshot.png
+[product-screenshot]: resources/readme/pybulletscreencap.png
