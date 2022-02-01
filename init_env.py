@@ -31,7 +31,7 @@ p.resetSimulation()
 p.setGravity(0, 0, -10)
 useRealTimeSim = 1
 p.setRealTimeSimulation(useRealTimeSim)
-p.loadSDF("resources/env_sdf.sdf")
+p.loadSDF("resources/grey_field.sdf")
 
 ### SETUP CAR ###
 car = p.loadURDF(os.path.join(pybullet_data.getDataPath(), "racecar/racecar.urdf"))
@@ -60,12 +60,12 @@ def get_cam_image():
     cam = np.array(p.getLinkState(car, 11))
     cam_mtx = np.array(p.getMatrixFromQuaternion(cam[1])).reshape((3, 3)).T
     pos_vec = cam[0]
-    fwd_vec = -cam_mtx[0]
+    fwd_vec = cam_mtx[0]
     fwd_vec = fwd_vec/np.linalg.norm(fwd_vec)
     up_vec = cam_mtx[2]
 
-    cam_position = pos_vec + fwd_vec*0.42
-    cam_target = cam_position + fwd_vec*2
+    cam_position = pos_vec + fwd_vec*0
+    cam_target = cam_position + fwd_vec*10
     cam_up_vector = up_vec
 
     view_matrix = p.computeViewMatrix(cam_position, cam_target,cam_up_vector)

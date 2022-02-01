@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from mprt_monkeypatch import remove_shm_from_resource_tracker as patch
 patch()
 
-class pyBullet_Camera:
+class Camera:
     def __init__(self):
         self.init()
     def init(self):
