@@ -1,5 +1,4 @@
 import json as JSON
-# import pybullet as p
 import numpy as np
 
 with open('./env_variables.json', 'r') as f:
@@ -16,18 +15,33 @@ default_force = 10
 lateral_constant = 2
 vertical_constant = 2
 
-def pyBullet_Controller(p,lateral,vertical):
-    steeringAngle = np.atan2(lateral/vertical)
-    targetVelocity = (lateral**2+vertical**2)**0.5
+
+def pybullet_controller(p,lateral,vertical):
+    target_velocity = 1
+    steering_angle = np.arctan2(lateral,vertical)
+    if steering_angle > np.pi/2:
+        steering_angle = steering_angle-np.pi
+        target_velocity = -1
+    elif steering_angle < -np.pi/2:
+        steering_angle = steering_angle+np.pi
+        target_velocity = -1
+
+    target_velocity *= (lateral**2+vertical**2)**0.5
     for wheel in wheels:
         p.setJointMotorControl2(car,
                                 wheel,
                                 p.VELOCITY_CONTROL,
-                                targetVelocity=-targetVelocity,
+                                targetVelocity=target_velocity,
                                 force=default_force)
     for steer in steering:
-        p.setJointMotorControl2(car, steer, p.POSITION_CONTROL, targetPosition=steeringAngle)
+        p.setJointMotorControl2(car,
+                                steer,
+                                p.POSITION_CONTROL,
+                                targetPosition=steering_angle)
+
 
 import pybullet as p
+
 p.connect(p.SHARED_MEMORY)
-pyBullet_Controller(p,10,0.2)
+pybullet_controller(p,
+                    0.,0)
