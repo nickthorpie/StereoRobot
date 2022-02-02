@@ -1,6 +1,6 @@
 import cv2  # Import the OpenCV library to enable computer vision
 import numpy as np  # Import the NumPy scientific computing library
-import edge_detection as edge  # Handles the detection of lane lines
+from StereoRobot.AutomaticAddison import edge_detection as edge  # Handles the detection of lane lines
 import matplotlib.pyplot as plt  # Used for plotting and error checking
 
 # Author: Addison Sears-Collins
