@@ -18,7 +18,7 @@
   <p align="center">
     Autonomous navigation using a stereo camera
     <br />
-    <a href="https://github.com/nickthorpie/StereoRobot/resources/MECH_460_Final_Report_Team_03.pdf"><strong>Explore the Paper »</strong></a>
+    <a href="https://github.com/nickthorpie/StereoRobot/tree/master/resources/MECH_460_Final_Report_Team_03.pdf"><strong>Explore the Paper »</strong></a>
     <br />
     <a href="https://github.com/nickthorpie/StereoRobot">Report Bug</a>
     ·
