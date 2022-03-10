@@ -19,7 +19,7 @@ class Lane:
         """
           Default constructor
 
-        :param orig_frame: Original camera image (i.e. frame)
+        :param orig_frame: Original stereo_camera image (i.e. frame)
         """
         self.orig_frame = orig_frame
 
@@ -97,7 +97,7 @@ class Lane:
         :param: print_to_terminal Display data to console if True
         :return: Offset from the center of the lane
         """
-        # Assume the camera is centered in the image.
+        # Assume the stereo_camera is centered in the image.
         # Get position of car in centimeters
         car_location = self.orig_frame.shape[1] / 2
 
@@ -433,7 +433,7 @@ class Lane:
         """
         Isolates lane lines.
 
-          :param frame: The camera frame that contains the lanes we want to detect
+          :param frame: The stereo_camera frame that contains the lanes we want to detect
         :return: Binary (i.e. black and white) image containing the lane lines.
         """
         if frame is None:

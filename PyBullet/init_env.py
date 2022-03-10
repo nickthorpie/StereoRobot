@@ -2,8 +2,8 @@
 """
 - Creates a pyBullet GUI Server
 - initializes objects (Racecar,ground plane)
-- Initializes camera
-    - Writes camera to a shared memory buffer
+- Initializes stereo_camera
+    - Writes stereo_camera to a shared memory buffer
 - writes a .json file to ./env_variables.json containing:
     - the racecar ID
     - link ID of steering and wheels
@@ -55,7 +55,7 @@ aspect = width / height
 near = 0.02
 far = 1
 
-# Write a function that moves camera to the position and orientation, and captures.
+# Write a function that moves stereo_camera to the position and orientation, and captures.
 def get_cam_image():
     cam = np.array(p.getLinkState(car, 11))
     cam_mtx = np.array(p.getMatrixFromQuaternion(cam[1])).reshape((3, 3)).T
