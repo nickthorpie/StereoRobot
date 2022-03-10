@@ -24,34 +24,180 @@
 # #
 #
 #
-# import time
-# import cv2
-# import numpy as np
-# import json
-# from stereovision.calibration import StereoCalibrator
-# from stereovision.calibration import StereoCalibration
-# from datetime import datetime
-# import arducam_mipicamera as arducam
-# import os
-# os.chdir(os.path.join(os.path.dirname(__file__)))\
+
+
 import config._load_config as config
-# # Depth map default preset
-# SWS = 5
-# PFS = 5
-# PFC = 29
-# MDS = -30
-# NOD = 160
-# TTH = 100
-# UR = 10
-# SR = 14
-# SPWS = 100
+from stereovision.calibration import StereoCalibration
+import cv2
+import arducam_mipicamera as arducam
+
 
 camera_params = config.load_camera_params()
 
-# class stereo_camera:
-#     def __init__(self):
-#
-# def align_down(size, align):
+def align_down(size, align):
+    return (size & ~((align ) -1))
+
+def align_up(size, align):
+    return align_down(size + align - 1, align)
+
+class stereo_camera:
+    def __init__(self):
+        self.camera_params = config.load_camera_params()
+        self.sbm_settings = config.load_sbm_config()
+        self.init_camera()
+
+    def init_camera(self):
+
+
+        self.camera = arducam.mipi_camera()
+        print("Open stereo_camera...")
+        self.camera.init_camera()
+        mode = self.camera_params['mode']
+        self.camera.set_mode(mode)
+        fmt = self.camera.get_format()
+        print("Current mode: {},resolution: {}x{}".format(fmt['mode'], fmt['width'], fmt['height']))
+
+        self.img_width= camera_params['width']
+        self.img_height = camera_params['height']
+
+        print ("Scaled image resolution:  " +str(self.img_width ) +" x  " +str(self.img_height))
+
+        # Implementing calibration data
+        print('Read calibration data and rectifying stereo pair...')
+        self.calibration = StereoCalibration(input_folder='calib_result')
+
+
+
+
+    def init_block_matcher(self,
+                           setLambda = 8000,
+                           setSigmaColor = 1):
+        data = self.sbm_settings
+
+        left_matcher = cv2.StereoBM_create(numDisparities=0, blockSize=21)
+        left_matcher.setPreFilterType(data['SADWindowSize'])
+        left_matcher.setPreFilterSize(data['preFilterSize'])
+        left_matcher.setPreFilterCap(data['preFilterCap'])
+        left_matcher.setMinDisparity(data['minDisparity'])
+        left_matcher.setNumDisparities(data['numberOfDisparities'])
+        left_matcher.setTextureThreshold(data['textureThreshold'])
+        left_matcher.setUniquenessRatio(data['uniquenessRatio'])
+        left_matcher.setSpeckleRange(data['speckleRange'])
+        left_matcher.setSpeckleWindowSize(data['speckleWindowSize'])
+
+        right_matcher = cv2.ximgproc.createRightMatcher(left_matcher)
+
+        wls_filter = cv2.ximgproc.createDisparityWLSFilterGeneric(False)
+        wls_filter.setLambda(setLambda);
+        wls_filter.setSigmaColor(setSigmaColor)  # between 0.8 to 2.0
+
+        self.right_matcher = right_matcher
+        self.left_matcher  = left_matcher
+        self.wls_filter = wls_filter
+
+    def get_frame(self):
+        """captures and returns an unsplit image pair"""
+        frame = self.camera.capture(encoding = 'i420')
+        fmt = self.camera.get_format()
+
+        height = int(align_up(fmt['height'], 16))
+        width = int(align_up(fmt['width'], 32))
+
+        img_pair = frame.as_array.reshape(int(height * 1.5), width)
+        img_pair = cv2.cvtColor(img_pair, cv2.COLOR_YUV2BGR_I420)
+        img_pair = img_pair[:fmt['width'], : fmt['height']]
+        return img_pair
+
+    def split_frame(self,img_pair):
+        """splits an image pair"""
+        img_height,img_width = (self.img_height,self.img_width)
+        img_left = img_pair [0:img_height,0:int(img_width/2)]
+        img_left = img_pair[0:img_height, int(img_width / 2):img_width]
+        return img_left, img_left
+
+    def to_rectified_pair(self,frame):
+        """takes a image pair, splits it and rectifies each frame""""
+        img_width = self.img_width
+        img_height = self.img_height
+
+        frame = cv2.resize(frame,(img_width,img_height))
+        pair_img = cv2.cvtColor (frame, cv2.COLOR_BGR2GRAY)
+
+        img_left = pair_img[0:img_height, 0:int(img_width / 2)]  # Y+H and X+W
+        img_right = pair_img[0:img_height, int(img_width / 2):img_width]  # Y+H and X+W
+
+        rectified_pair = self.calibration.rectify((img_left, img_right))
+        return rectified_pair
+
+    def block_matcher_wls(self,rectified_pair):
+        """Block matcher. Could be implemented in to_disparity, but keeping block_matcher
+        methods separate to make implementations easier
+        """
+        dmLeft = rectified_pair[0]
+        dmRight = rectified_pair[1]
+
+        disparityL = self.left_matcher.compute(dmLeft, dmRight)
+        disparityR = self.right_matcher.compute(dmLeft, dmRight)
+
+        disparity = self.wls_filter.filter(disparityL, dmLeft, disparity_map_right=disparityR)
+
+        return disparity
+
+    def to_disparity(self,rectified_pair,block_matcher = None):
+        """takes a rectified pair and applies a block_matcher
+            can pass an optional block_matcher, but defaults to the block_matcher_wls methods
+            block_matcher can any function of type block_matcher(rectified_pair=(imgL,imgR)) -> disparity
+        """
+        if block_matcher is None:
+            block_matcher = self.block_matcher_wls
+        disparity = block_matcher(rectified_pair)
+
+        local_max = disparity.max()
+        local_min = 0  # disparity.min()
+        # 65535.0 = 2^16-1
+        disparity_grayscale = (disparity - local_min) * (65535.0 / (local_max - local_min))
+        disparity_fixtype = cv2.convertScaleAbs(disparity_grayscale, alpha=(255.0 / 65535.0))
+        disparity_fixtype = cv2.flip(disparity_fixtype, 1)
+        # disparity_color = cv2.applyColorMap(disparity_fixtype, cv2.COLORMAP_JET)
+        return disparity_fixtype
+        # cv2.imshow("Image", disparity_color)
+        # key = cv2.waitKey(1) & 0xFF
+        # if key == ord("q"):
+        #     quit();
+        # return disparity_color
+
+    def to_colormap(self,disparity):
+        disparity_color = cv2.applyColorMap(disparity,cv2.COLORMAP_JET)
+        return disparity_color
+
+    def show_windows(self):
+        # Initialize interface windows
+        try:
+            print("Opening Windows. Press Q to exit")
+            cv2.namedWindow("disp_map")
+            cv2.moveWindow("disp_map", 50, 100)
+            cv2.namedWindow("left")
+            cv2.moveWindow("left", 450, 100)
+            cv2.namedWindow("right")
+            cv2.moveWindow("right", 850, 100)
+            while True:
+                frame = self.get_frame()
+                rectified_pair = self.to_rectified_pair(frame)
+                disparity = self.to_disparity(rectified_pair)
+                colormap = to_colormap(disparity)
+                cv2.imshow("left", imgLeft)
+                cv2.imshow("right", imgRight)
+                cv2.imshow("disp_map",disparity)
+
+                if key == ord("q"):
+                    raise Exception("User Exited windows")
+        except Exception as E:
+            print(E)
+        finally:
+            cv2.destroyAllWindows()
+
+
+    # def align_down(size, align):
 #     return (size & ~((align ) -1))
 #
 # def align_up(size, align):
@@ -80,7 +226,7 @@ camera_params = config.load_camera_params()
 # cam_width = fmt['width']
 # cam_height = fmt['height']
 #
-# img_widt h= camera_params['width']
+# img_width= camera_params['width']
 # img_height = camera_params['height']
 # print ("Scaled image resolution:  " +str(img_width ) +" x  " +str(img_height))
 #
