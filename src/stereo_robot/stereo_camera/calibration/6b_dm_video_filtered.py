@@ -32,7 +32,7 @@ from stereovision.calibration import StereoCalibration
 from datetime import datetime
 import arducam_mipicamera as arducam
 import os
-os.chdir(os.path.join(os.path.dirname(__file__)))
+os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
 # Depth map default preset
 SWS = 5
@@ -102,6 +102,12 @@ cv2.moveWindow("right", 850,100)
 disparity = np.zeros((img_width, img_height), np.uint8)
 left_matcher = cv2.StereoBM_create(numDisparities=0, blockSize=21)
 
+right_matcher = cv2.ximgproc.createRightMatcher(left_matcher);
+
+wls_filter = cv2.ximgproc.createDisparityWLSFilterGeneric(False)
+wls_filter.setLambda(8000);
+wls_filter.setSigmaColor(1) #between 0.8 to 2.0
+
 def stereo_depth_map(rectified_pair):
     dmLeft = rectified_pair[0]
     dmRight = rectified_pair[1]
@@ -128,7 +134,7 @@ def stereo_depth_map(rectified_pair):
     return disparity_color
 
 def load_map_settings( fName ):
-    global SWS, PFS, PFC, MDS, NOD, TTH, UR, SR, SPWS, loading_settings
+    global SWS, PFS, PFC, MDS, NOD, TTH, UR, SR, SPWS,SIG,LAM, loading_settings
     print('Loading parameters from file...')
     f=open(fName, 'r')
     data = json.load(f)
@@ -140,7 +146,9 @@ def load_map_settings( fName ):
     TTH=data['textureThreshold']
     UR=data['uniquenessRatio']
     SR=data['speckleRange']
-    SPWS=data['speckleWindowSize']    
+    SPWS=data['speckleWindowSize']
+    SIG = data['sigma']
+    LAM = data['lambda']
     #sbm.setSADWindowSize(SWS)
     left_matcher.setPreFilterType(1)
     left_matcher.setPreFilterSize(PFS)
@@ -151,17 +159,19 @@ def load_map_settings( fName ):
     left_matcher.setUniquenessRatio(UR)
     left_matcher.setSpeckleRange(SR)
     left_matcher.setSpeckleWindowSize(SPWS)
+
+    wls_filter = cv2.ximgproc.createDisparityWLSFilterGeneric(False)
+    right_matcher = cv2.ximgproc.createRightMatcher(left_matcher);
+
+    wls_filter.setLambda(LAM)
+    wls_filter.setSigmaColor(SIG)
     f.close()
     print ('Parameters loaded from file '+fName)
+    return left_matcher,right_matcher,wls_filter
 
 
-load_map_settings ("3dmap_set.txt")
+left_matcher,right_matcher,wls_filter = load_map_settings ("3dmap_set.txt")
 
-right_matcher = cv2.ximgproc.createRightMatcher(left_matcher);
-
-wls_filter = cv2.ximgproc.createDisparityWLSFilterGeneric(False)
-wls_filter.setLambda(8000);
-wls_filter.setSigmaColor(1) #between 0.8 to 2.0
                                                    
 # capture frames from the stereo_camera
 # for frame in stereo_camera.capture_continuous(capture, format="bgra", use_video_port=True, resize=(img_width,img_height)):

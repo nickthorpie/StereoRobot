@@ -27,6 +27,7 @@ import cv2
 import os
 # from picamera.array import PiRGBArray
 # from picamera import PiCamera
+import numpy.core.multiarray
 from matplotlib import pyplot as plt
 from matplotlib.widgets import Slider, Button
 import numpy as np
@@ -34,7 +35,7 @@ import json
 from stereovision.calibration import StereoCalibrator
 from stereovision.calibration import StereoCalibration
 import os
-os.chdir(os.path.join(os.path.dirname(__file__)))
+os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
 try:
   camera_params = json.load(open("camera_params.txt", "r"))
@@ -80,6 +81,8 @@ TTH = 100
 UR = 10
 SR = 15
 SPWS = 100
+LAM = 10000
+SIG = 0.8
 loading_settings=0
 def stereo_depth_map(rectified_pair):
     print ('SWS='+str(SWS)+' PFS='+str(PFS)+' PFC='+str(PFC)+' MDS='+\
@@ -87,7 +90,7 @@ def stereo_depth_map(rectified_pair):
     print (' UR='+str(UR)+' SR='+str(SR)+' SPWS='+str(SPWS))
     c, r = rectified_pair[0].shape
     disparity = np.zeros((c, r), np.uint8)
-    left_matcher = cv2.StereoBM_create(numDisparities=16, blockSize=15)
+    left_matcher = cv2.StereoBM_create(numDisparities=16, blockSize=21)
     #sbm.SADWindowSize = SWS
     left_matcher.setPreFilterType(1)
     left_matcher.setPreFilterSize(PFS)
@@ -101,9 +104,10 @@ def stereo_depth_map(rectified_pair):
     
     right_matcher = cv2.ximgproc.createRightMatcher(left_matcher);
     
-    wls_filter = cv2.ximgproc.createDisparityWLSFilter(left_matcher)
-    wls_filter.setLambda(10000);
-    wls_filter.setSigmaColor(0.8) #between 0.8 to 2.0
+    wls_filter = cv2.ximgproc.createDisparityWLSFilterGeneric(False)
+
+    wls_filter.setLambda(LAM);
+    wls_filter.setSigmaColor(SIG) #between 0.8 to 2.0
     
     dmLeft = rectified_pair[0]
     dmRight = rectified_pair[1]
@@ -133,11 +137,11 @@ disparity = stereo_depth_map(rectified_pair)
 # Draw left image and depth map
 axcolor = 'lightgoldenrodyellow'
 fig = plt.subplots(1,2)
-plt.subplots_adjust(left=0.15, bottom=0.5)
+plt.subplots_adjust(left=0.15, bottom=0.59)
 plt.subplot(1,2,1)
 dmObject = plt.imshow(rectified_pair[0], 'gray')
 
-saveax = plt.axes([0.3, 0.38, 0.15, 0.04]) #stepX stepY width height
+saveax = plt.axes([0.3, 0.50, 0.15, 0.04]) #stepX stepY width height
 buttons = Button(saveax, 'Save settings', color=axcolor, hovercolor='0.975')
 
 
@@ -146,7 +150,7 @@ def save_map_settings( event ):
     print('Saving to file...') 
     result = json.dumps({'SADWindowSize':SWS, 'preFilterSize':PFS, 'preFilterCap':PFC, \
              'minDisparity':MDS, 'numberOfDisparities':NOD, 'textureThreshold':TTH, \
-             'uniquenessRatio':UR, 'speckleRange':SR, 'speckleWindowSize':SPWS},\
+             'uniquenessRatio':UR, 'speckleRange':SR, 'speckleWindowSize':SPWS,'lambda':LAM,'sigma':SIG},\
              sort_keys=True, indent=4, separators=(',',':'))
     fName = '3dmap_set.txt'
     f = open (str(fName), 'w') 
@@ -158,10 +162,10 @@ def save_map_settings( event ):
 buttons.on_clicked(save_map_settings)
 
 
-loadax = plt.axes([0.5, 0.38, 0.15, 0.04]) #stepX stepY width height
+loadax = plt.axes([0.5, 0.50, 0.15, 0.04]) #stepX stepY width height
 buttonl = Button(loadax, 'Load settings', color=axcolor, hovercolor='0.975')
 def load_map_settings( event ):
-    global SWS, PFS, PFC, MDS, NOD, TTH, UR, SR, SPWS, loading_settings
+    global SWS, PFS, PFC, MDS, NOD, TTH, UR, SR, SPWS,LAM,SIG, loading_settings
     loading_settings = 1
     fName = '3dmap_set.txt'
     print('Loading parameters from file...')
@@ -176,7 +180,9 @@ def load_map_settings( event ):
     sTTH.set_val(data['textureThreshold'])
     sUR.set_val(data['uniquenessRatio'])
     sSR.set_val(data['speckleRange'])
-    sSPWS.set_val(data['speckleWindowSize'])    
+    sSPWS.set_val(data['speckleWindowSize'])
+    sSIG.set_val(data['sigma'])
+    sLAM.set_val(data['lambda'])
     f.close()
     buttonl.label.set_text ("Load settings")
     print ('Parameters loaded from file '+fName)
@@ -194,15 +200,18 @@ dmObject = plt.imshow(disparity, aspect='equal', cmap='jet')
 # Draw interface for adjusting parameters
 print('Start interface creation (it takes up to 30 seconds)...')
 
-SWSaxe = plt.axes([0.15, 0.01, 0.7, 0.025], facecolor=axcolor) #stepX stepY width height 
-PFSaxe = plt.axes([0.15, 0.05, 0.7, 0.025], facecolor=axcolor) #stepX stepY width height 
-PFCaxe = plt.axes([0.15, 0.09, 0.7, 0.025], facecolor=axcolor) #stepX stepY width height 
-MDSaxe = plt.axes([0.15, 0.13, 0.7, 0.025], facecolor=axcolor) #stepX stepY width height 
-NODaxe = plt.axes([0.15, 0.17, 0.7, 0.025], facecolor=axcolor) #stepX stepY width height 
-TTHaxe = plt.axes([0.15, 0.21, 0.7, 0.025], facecolor=axcolor) #stepX stepY width height 
-URaxe = plt.axes([0.15, 0.25, 0.7, 0.025], facecolor=axcolor) #stepX stepY width height
-SRaxe = plt.axes([0.15, 0.29, 0.7, 0.025], facecolor=axcolor) #stepX stepY width height
+SWSaxe  = plt.axes([0.15, 0.01, 0.7, 0.025], facecolor=axcolor) #stepX stepY width height
+PFSaxe  = plt.axes([0.15, 0.05, 0.7, 0.025], facecolor=axcolor) #stepX stepY width height
+PFCaxe  = plt.axes([0.15, 0.09, 0.7, 0.025], facecolor=axcolor) #stepX stepY width height
+MDSaxe  = plt.axes([0.15, 0.13, 0.7, 0.025], facecolor=axcolor) #stepX stepY width height
+NODaxe  = plt.axes([0.15, 0.17, 0.7, 0.025], facecolor=axcolor) #stepX stepY width height
+TTHaxe  = plt.axes([0.15, 0.21, 0.7, 0.025], facecolor=axcolor) #stepX stepY width height
+URaxe   = plt.axes([0.15, 0.25, 0.7, 0.025], facecolor=axcolor) #stepX stepY width height
+SRaxe   = plt.axes([0.15, 0.29, 0.7, 0.025], facecolor=axcolor) #stepX stepY width height
 SPWSaxe = plt.axes([0.15, 0.33, 0.7, 0.025], facecolor=axcolor) #stepX stepY width height
+LAMaxe  = plt.axes([0.15, 0.37, 0.7, 0.025], facecolor=axcolor)
+SIGaxe  = plt.axes([0.15, 0.41, 0.7, 0.025], facecolor=axcolor)
+
 
 sSWS = Slider(SWSaxe, 'SWS', 5.0, 255.0, valinit=5)
 sPFS = Slider(PFSaxe, 'PFS', 5.0, 255.0, valinit=5)
@@ -210,14 +219,17 @@ sPFC = Slider(PFCaxe, 'PreFiltCap', 5.0, 63.0, valinit=29)
 sMDS = Slider(MDSaxe, 'MinDISP', -100.0, 100.0, valinit=-25)
 sNOD = Slider(NODaxe, 'NumOfDisp', 16.0, 256.0, valinit=128)
 sTTH = Slider(TTHaxe, 'TxtrThrshld', 0.0, 1000.0, valinit=100)
-sUR = Slider(URaxe, 'UnicRatio', 1.0, 20.0, valinit=10)
-sSR = Slider(SRaxe, 'SpcklRng', 0.0, 40.0, valinit=15)
+sUR  = Slider(URaxe,  'UnicRatio', 1.0, 20.0, valinit=10)
+sSR  = Slider(SRaxe,  'SpcklRng', 0.0, 40.0, valinit=15)
 sSPWS = Slider(SPWSaxe, 'SpklWinSze', 0.0, 300.0, valinit=100)
+sLAM = Slider(LAMaxe, 'lambda', 0.0, 20000.0, valinit=8000)
+sSIG = Slider(SIGaxe, 'sigma', 0.0, 4.0, valinit=1.2)
+
 
 
 # Update depth map parameters and redraw
 def update(val):
-    global SWS, PFS, PFC, MDS, NOD, TTH, UR, SR, SPWS
+    global SWS, PFS, PFC, MDS, NOD, TTH, UR, SR, SPWS,LAM,SIG
     SWS = int(sSWS.val/2)*2+1 #convert to ODD
     PFS = int(sPFS.val/2)*2+1
     PFC = int(sPFC.val/2)*2+1    
@@ -226,7 +238,9 @@ def update(val):
     TTH = int(sTTH.val)
     UR = int(sUR.val)
     SR = int(sSR.val)
-    SPWS= int(sSPWS.val)
+    SPWS = int(sSPWS.val)
+    SIG = float(sSIG.val)
+    LAM = float(sLAM.val)
     if ( loading_settings==0 ):
         print ('Rebuilding depth map')
         disparity = stereo_depth_map(rectified_pair)
@@ -245,6 +259,8 @@ sTTH.on_changed(update)
 sUR.on_changed(update)
 sSR.on_changed(update)
 sSPWS.on_changed(update)
+sLAM.on_changed(update)
+sSIG.on_changed(update)
 
 print('Show interface to user')
 plt.show()

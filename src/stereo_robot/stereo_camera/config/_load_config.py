@@ -1,6 +1,6 @@
 import json
 import os
-os.chdir(os.path.dirname(__file__))
+os.chdir(os.path.dirname(os.path.realpath(__file__)))
 def load_sbm_config():
     try:
         with open("3dmap_set.txt",'r') as f:

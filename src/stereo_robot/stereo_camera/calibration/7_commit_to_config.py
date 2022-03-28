@@ -1,7 +1,7 @@
 import os
 import shutil
 
-current_folder = os.path.abspath(os.path.dirname(__file__))
+current_folder = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
 config_folder = os.path.abspath(os.path.join(current_folder,"..","config"))
 
 calib_result_folder = os.path.join(current_folder,"calib_result")

@@ -31,7 +31,7 @@ import cv2
 import numpy as np
 import os
 
-os.chdir(os.path.join(os.path.dirname(__file__)))
+os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
 def align_down(size, align):
     return (size & ~((align)-1))

@@ -97,13 +97,13 @@ cv2.moveWindow("right", 850,100)
 
 
 disparity = np.zeros((img_width, img_height), np.uint8)
-sbm = cv2.StereoSGBM_create(numDisparities=0, blockSize=21)
+sbm = cv2.StereoSGBM_create(numDisparities=0, blockSize=13)
 
 def stereo_depth_map(rectified_pair):
     dmLeft = rectified_pair[0]
     dmRight = rectified_pair[1]
     disparity = sbm.compute(dmLeft, dmRight)
-    local_max = 1000#disparity.max()
+    local_max = disparity.max()
     local_min = disparity.min()
     disparity_grayscale = (disparity-local_min)*(65535.0/(local_max-local_min))
     disparity_fixtype = cv2.convertScaleAbs(disparity_grayscale, alpha=(255.0/65535.0))

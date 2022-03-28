@@ -33,7 +33,7 @@ from datetime import datetime
 import arducam_mipicamera as arducam
 import os
 
-os.chdir(os.path.join(os.path.dirname(__file__)))
+os.chdir(os.path.dirname(os.path.realpath(__file__)))
 # Depth map default preset
 SWS = 5
 PFS = 5
@@ -100,7 +100,7 @@ cv2.moveWindow("right", 850,100)
 
 
 disparity = np.zeros((img_width, img_height), np.uint8)
-sbm = cv2.StereoBM_create(numDisparities=0, blockSize=21)
+sbm = cv2.StereoBM_create(numDisparities=0, blockSize=13)
 
 def stereo_depth_map(rectified_pair):
     dmLeft = rectified_pair[0]

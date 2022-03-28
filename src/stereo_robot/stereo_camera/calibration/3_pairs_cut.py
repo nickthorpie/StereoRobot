@@ -28,7 +28,7 @@ import os
 import json
 import os
 
-os.chdir(os.path.join(os.path.dirname(__file__)))
+os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
 try:
   camera_params = json.load(open("camera_params.txt", "r"))

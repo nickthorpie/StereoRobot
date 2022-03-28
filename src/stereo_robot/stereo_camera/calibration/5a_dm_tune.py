@@ -27,6 +27,7 @@ import cv2
 import os
 # from picamera.array import PiRGBArray
 # from picamera import PiCamera
+import numpy.core.multiarray
 from matplotlib import pyplot as plt
 from matplotlib.widgets import Slider, Button
 import numpy as np
@@ -35,7 +36,7 @@ from stereovision.calibration import StereoCalibrator
 from stereovision.calibration import StereoCalibration
 import os
 
-os.chdir(os.path.join(os.path.dirname(__file__)))
+os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
 try:
   camera_params = json.load(open("camera_params.txt", "r"))
@@ -88,7 +89,7 @@ def stereo_depth_map(rectified_pair):
     print (' UR='+str(UR)+' SR='+str(SR)+' SPWS='+str(SPWS))
     c, r = rectified_pair[0].shape
     disparity = np.zeros((c, r), np.uint8)
-    sbm = cv2.StereoBM_create(numDisparities=16, blockSize=15)
+    sbm = cv2.StereoBM_create(numDisparities=16, blockSize=13)
     #sbm.SADWindowSize = SWS
     sbm.setPreFilterType(1)
     sbm.setPreFilterSize(PFS)

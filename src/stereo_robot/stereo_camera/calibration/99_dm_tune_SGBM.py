@@ -33,7 +33,8 @@ import numpy as np
 import json
 from stereovision.calibration import StereoCalibrator
 from stereovision.calibration import StereoCalibration
-
+import os
+os.chdir(os.path.join(os.path.dirname(__file__)))
 try:
   camera_params = json.load(open("camera_params.txt", "r"))
 except Exception as e:
@@ -85,7 +86,7 @@ def stereo_depth_map(rectified_pair):
     print (' UR='+str(UR)+' SR='+str(SR)+' SPWS='+str(SPWS))
     c, r = rectified_pair[0].shape
     disparity = np.zeros((c, r), np.uint8)
-    sbm = cv2.StereoSGBM_create(numDisparities=16, blockSize=15)
+    sbm = cv2.StereoSGBM_create(numDisparities=16, blockSize=21)
     #sbm.SADWindowSize = SWS
     #sbm.setPreFilterType(1)
     #sbm.setPreFilterSize(PFS)
